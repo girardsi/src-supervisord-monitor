@@ -2,7 +2,7 @@ FROM registry.gitlab.com/sdt7772416/infrastructure/node-alpha:latest AS build-fr
 
 COPY assets/ /app
 WORKDIR /app
-RUN corepack enable && yarn set version from sources && yarn --immutable && yarn install && yarn build
+RUN corepack enable && yarn set version from sources && yarn install && yarn build
 
 FROM php:8.3-fpm-alpine AS parent-supervisord-monitor-php-fpm
 
