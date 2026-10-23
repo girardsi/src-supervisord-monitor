@@ -3,7 +3,7 @@ name: Build and Push Docker Image to GHCR
 env:
   # Remplacer 'nom-de-l-image' par le nom souhaité (en minuscules !)
   # ex: ghcr.io/${{ github.repository_owner }}/mon-app
-  REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/nom-de-l-image
+  REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/src-supervisord-monitor
   IMAGE_WITH_TAG: ${{ format('{0}:{1}', env.REGISTRY_IMAGE, github.run_number) }}
   LATEST_IMAGE: ${{ format('{0}:latest', env.REGISTRY_IMAGE) }}
 
