@@ -1,26 +1,56 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Image to GHCR
 
 env:
-  IMAGE_WITH_TAG: ${{ format('{0}:{1}', secrets.CI_REGISTRY_IMAGE, github.run_number) }}
-  LATEST_IMAGE: ${{ format('{0}:latest', secrets.CI_REGISTRY_IMAGE) }}
+  # Remplacer 'nom-de-l-image' par le nom souhaité (en minuscules !)
+  # ex: ghcr.io/${{ github.repository_owner }}/mon-app
+  REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/nom-de-l-image
+  IMAGE_WITH_TAG: ${{ format('{0}:{1}', env.REGISTRY_IMAGE, github.run_number) }}
+  LATEST_IMAGE: ${{ format('{0}:latest', env.REGISTRY_IMAGE) }}
 
 on:
   push:
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # INDISPENSABLE : donne les droits à GitHub Actions de pousser un package
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4 # Passage à v4 (plus récent/sécurisé)
+        
       - name: Create .env file for frontend
         run: echo "VITE_API_URL='/api'" > assets/.env
+        
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+        
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Registry
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login ${{ secrets.CI_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Build and Push Docker Image (multi-arch)
-        run: docker buildx build --platform linux/amd64,linux/arm64 --push -t $IMAGE_WITH_TAG -t $LATEST_IMAGE .
+        run: |
+          # Convertir l'URI de l'image en minuscules car Docker n'accepte pas les majuscules
+          IMAGE_LOWER=$(echo "${{ env.REGISTRY_IMAGE }}" | tr '[:upper:]' '[:lower:]')
+          TAG_LOWER=$(echo "${{ env.IMAGE_WITH_TAG }}" | tr '[:upper:]' '[:lower:]')
+          LATEST_LOWER=$(echo "${{ env.LATEST_IMAGE }}" | tr '[:upper:]' '[:lower:]')
+          
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            -t $TAG_LOWER \
+            -t $LATEST_LOWER \
+            .
