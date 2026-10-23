@@ -1,11 +1,9 @@
 name: Build and Push Docker Image to GHCR
 
 env:
-  # Remplacer 'nom-de-l-image' par le nom souhaité (en minuscules !)
-  # ex: ghcr.io/${{ github.repository_owner }}/mon-app
-  REGISTRY_IMAGE: ghcr.io/${{ github.repository_owner }}/src-supervisord-monitor
-  IMAGE_WITH_TAG: ${{ format('{0}:{1}', env.REGISTRY_IMAGE, github.run_number) }}
-  LATEST_IMAGE: ${{ format('{0}:latest', env.REGISTRY_IMAGE) }}
+  # Remplacer 'nom-de-l-image' par le nom de votre projet
+  IMAGE_WITH_TAG: ghcr.io/${{ github.repository_owner }}/src-supervisord-monitor:${{ github.run_number }}
+  LATEST_IMAGE: ghcr.io/${{ github.repository_owner }}/src-supervisord-monitor:latest
 
 on:
   push:
@@ -23,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # Passage à v4 (plus récent/sécurisé)
+        uses: actions/checkout@v4
         
       - name: Create .env file for frontend
         run: echo "VITE_API_URL='/api'" > assets/.env
@@ -43,14 +41,13 @@ jobs:
           
       - name: Build and Push Docker Image (multi-arch)
         run: |
-          # Convertir l'URI de l'image en minuscules car Docker n'accepte pas les majuscules
-          IMAGE_LOWER=$(echo "${{ env.REGISTRY_IMAGE }}" | tr '[:upper:]' '[:lower:]')
-          TAG_LOWER=$(echo "${{ env.IMAGE_WITH_TAG }}" | tr '[:upper:]' '[:lower:]')
-          LATEST_LOWER=$(echo "${{ env.LATEST_IMAGE }}" | tr '[:upper:]' '[:lower:]')
+          # Convertir les tags en minuscules pour respecter les règles de Docker
+          IMAGE_TAG_LOWER=$(echo "${{ env.IMAGE_WITH_TAG }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_LATEST_LOWER=$(echo "${{ env.LATEST_IMAGE }}" | tr '[:upper:]' '[:lower:]')
           
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --push \
-            -t $TAG_LOWER \
-            -t $LATEST_LOWER \
+            -t $IMAGE_TAG_LOWER \
+            -t $IMAGE_LATEST_LOWER \
             .
